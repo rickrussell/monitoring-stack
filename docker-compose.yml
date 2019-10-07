@@ -1,0 +1,105 @@
+version: '3'
+services:
+    prometheus:
+      image: 'prom/prometheus:latest'
+      container_name: prometheus
+      ports:
+        - '9090:9090'
+      command:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+        - '--storage.tsdb.path=/prometheus'
+        - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+        - '--web.console.templates=/usr/share/prometheus/consoles'
+      volumes:
+        - prometheus_data:/prometheus
+        - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        - ./prometheus/alert.rules:/etc/prometheus/alert.rules
+      depends_on:
+        - cadvisor
+      networks:
+        - monitoring
+      labels:
+        org.label-schema.group: "monitoring"
+
+    nodeexporter:
+      image: prom/node-exporter:latest
+      container_name: nodeexporter
+      user: root
+      privileged: true
+      volumes:
+        - /proc:/host/proc:ro
+        - /sys:/host/sys:ro
+        - /:/rootfs:ro
+      command:
+        - '--path.procfs=/host/proc'
+        - '--path.sysfs=/host/sys'
+        - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"'
+      ports:
+        - "9100:9100"
+      links:
+       - prometheus
+      restart: unless-stopped
+      networks:
+        - monitoring
+      labels:
+        org.label-schema.group: "monitoring"
+
+    cadvisor:
+      image: google/cadvisor
+      container_name: cadvisor
+      privileged: true
+      ports:
+          - '8081:8081'
+      volumes:
+        - '/:/rootfs:ro'
+        - '/var/run:/var/run:rw'
+        - '/sys:/sys:ro'
+        - '/var/lib/docker/:/var/lib/docker:ro'
+      networks:
+        - monitoring
+      labels:
+        org.label-schema.group: "monitoring"
+
+    alertmanager:
+      image: prom/alertmanager
+      container_name: alertmanager
+      ports:
+        - '9093:9093'
+      volumes:
+        - './alertmanager/:/etc/alertmanager/'
+        - './alertmanager/templates:/etc/alertmanager/templates'
+      command:
+        - '--config.file=/etc/alertmanager/config.yml'
+        - '--storage.path=/alertmanager'
+      restart: always
+      networks:
+        - monitoring
+      labels:
+        org.label-schema.group: "monitoring"
+
+    grafana:
+      image: grafana/grafana
+      container_name: alertmanager
+      depends_on:
+        - prometheus
+      ports:
+        - '3000:3000'
+      volumes:
+        - 'grafana_data:/var/lib/grafana'
+        - './grafana/provisioning/:/etc/grafana/provisioning/'
+      env_file:
+        - ./grafana/config.monitoring
+      restart: always
+      networks:
+        - monitoring
+      labels:
+        org.label-schema.group: "monitoring"
+
+networks:
+  monitoring:
+    external: true
+
+volumes:
+  grafana_data:
+  prometheus_data:
+    driver: local

@@ -1,0 +1,80 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+      monitor: 'host'
+
+# Load and evaluate rules in this file every 'evaluation_interval' seconds.
+rule_files:
+  - 'alert.rules'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 30s
+    static_configs:
+        - targets: ['prometheus:9090']
+
+  - job_name: 'alertmanager'
+    scrape_interval: 30s
+    static_configs:
+        - targets: ['alertmanager:9093']
+
+  - job_name: 'cadvisor'
+    scrape_interval: 30s
+    static_configs:
+        - targets: [ 'cadvisor:8080']
+
+  - job_name: 'nodeexporter'
+    scrape_interval: 30s
+    static_configs:
+        - targets: ['nodeexporter:9100']
+
+  - job_name: 'grafana'
+    scrape_interval: 30s
+    static_configs:
+        - targets: ['grafana:3000']
+
+  - job_name: 'Servers'
+    metrics_path: /metrics
+    scrape_interval: 30s
+    scrape_timeout: 8s
+    static_configs:
+        - targets: ['10.6.6.10:9182']
+          labels:
+            service: 'sherlock'
+        - targets: ['10.6.6.11:9182']
+          labels:
+            service: 'archer'
+
+# Using wmi_exporter on each machine for now
+# Will uncomment and use when we introduce linux machines
+#  - job_name: 'netdata'
+#    metrics_path: /api/v1/allmetrics
+#    params:
+#      format: [ prometheus ]
+#    static_configs:
+#      - targets: ['netdata:19999']
+
+  - job_name: 'noneck.io'
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [ noneck.io ]
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: ['alertmanager:9093']
+
+#  - job_name: 'nginx'
+#    scrape_interval: 10s
+#    static_configs:
+#      - targets: ['nginxexporter:9113']
+
+#  - job_name: 'aspnetcore'
+#    scrape_interval: 10s
+#    static_configs:
+#      - targets: ['eventlog-proxy:5000', 'eventlog:5000']
