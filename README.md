@@ -1,5 +1,5 @@
 # monitoring-stack
-alertmanager, cadvisor, grafana, nodeexporter, prometheus, wmi_exporter for hosts
+alertmanager, blackbox, cadvisor, grafana, nodeexporter, prometheus, wmi_exporter for windows hosts
 
 
 ## pull, set variables, deploy
