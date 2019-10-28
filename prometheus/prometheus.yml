@@ -17,6 +17,11 @@ scrape_configs:
     static_configs:
         - targets: ['prometheus:9090']
 
+  - job_name: 'blackbox'
+    scrape_interval: 30s
+    static_configs:
+        - targets: ['blackbox:9115']
+
   - job_name: 'alertmanager'
     scrape_interval: 30s
     static_configs:
@@ -39,42 +44,64 @@ scrape_configs:
 
   - job_name: 'Servers'
     metrics_path: /metrics
-    scrape_interval: 30s
+    scrape_interval: 15s
     scrape_timeout: 8s
     static_configs:
-        - targets: ['10.6.6.10:9182']
+        - targets: ['10.66.6.110:9182']
           labels:
-            service: 'sherlock'
-        - targets: ['10.6.6.11:9182']
+            hostname: 'watson'
+            service: 'utility'
+        - targets: ['10.66.6.4:9182']
           labels:
-            service: 'archer'
+            hostname: 'curdz'
+            service: 'WSUS'
+        - targets: ['10.66.6.201:9182']
+          labels:
+            hostname: 'odin'
+            service: 'Domain Controller'
+        - targets: ['10.66.6.20:9182']
+          labels:
+            hostname: 'warez'
+            service: 'File & Printer Sharing'
+        - targets: ['10.66.6.21:9182']
+          labels:
+            hostname: 'deebz'
+            service: 'MariaDB'
 
-# Using wmi_exporter on each machine for now
-# Will uncomment and use when we introduce linux machines
-#  - job_name: 'netdata'
-#    metrics_path: /api/v1/allmetrics
-#    params:
-#      format: [ prometheus ]
-#    static_configs:
-#      - targets: ['netdata:19999']
-
-  - job_name: 'noneck.io'
+  - job_name: noneck.io
     scrape_interval: 30s
     metrics_path: /probe
     params:
-      module: [ noneck.io ]
+      module: [ http_2xx ]
+    static_configs:
+     - targets:
+        - https://www.noneck.io/
+    relabel_configs:
+     - source_labels: [__address__]
+       target_label: __param_target
+     - source_labels: [__param_target]
+       target_label: instance
+     - target_label: __address__
+       replacement: blackbox:9115 # The blackbox exporter.
+
+  - job_name: WSUS
+    scrape_interval: 30s
+    metrics_path: /probe
+    params:
+      module: [ http_2xx ]
+    static_configs:
+     - targets:
+        - http://10.66.6.4:8530/
+    relabel_configs:
+     - source_labels: [__address__]
+       target_label: __param_target
+     - source_labels: [__param_target]
+       target_label: instance
+     - target_label: __address__
+       replacement: blackbox:9115 # The blackbox exporter.
 
 alerting:
   alertmanagers:
   - static_configs:
     - targets: ['alertmanager:9093']
 
-#  - job_name: 'nginx'
-#    scrape_interval: 10s
-#    static_configs:
-#      - targets: ['nginxexporter:9113']
-
-#  - job_name: 'aspnetcore'
-#    scrape_interval: 10s
-#    static_configs:
-#      - targets: ['eventlog-proxy:5000', 'eventlog:5000']

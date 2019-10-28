@@ -8,6 +8,7 @@ services:
       command:
         - '--config.file=/etc/prometheus/prometheus.yml'
         - '--storage.tsdb.path=/prometheus'
+        - '--web.external-url=http://alerts.noneck.io:9093'
         - '--web.console.libraries=/usr/share/prometheus/console_libraries'
         - '--web.console.templates=/usr/share/prometheus/consoles'
       volumes:
@@ -16,6 +17,21 @@ services:
         - ./prometheus/alert.rules:/etc/prometheus/alert.rules
       depends_on:
         - cadvisor
+      networks:
+        - monitoring
+      labels:
+        org.label-schema.group: "monitoring"
+
+    blackbox:
+      image: prom/blackbox-exporter
+      container_name: blackbox
+      dns: 8.8.8.8
+      ports:
+          - '9115:9115'
+      volumes:
+        - blackbox:/blackbox
+        - ./blackbox/blackbox.yml:/blackbox/blackbox.yml:ro
+      command: "--config.file=/blackbox/blackbox.yml"
       networks:
         - monitoring
       labels:
@@ -69,8 +85,10 @@ services:
         - './alertmanager/:/etc/alertmanager/'
         - './alertmanager/templates:/etc/alertmanager/templates'
       command:
-        - '--config.file=/etc/alertmanager/config.yml'
+        - '--config.file=/etc/alertmanager/alertmanager.yml'
         - '--storage.path=/alertmanager'
+        - '--cluster.advertise-address=10.66.6.15:9093'
+        - '--web.external-url=http://alerts.noneck.io:9093'
       restart: always
       networks:
         - monitoring
@@ -102,4 +120,5 @@ networks:
 volumes:
   grafana_data:
   prometheus_data:
+  blackbox:
     driver: local
