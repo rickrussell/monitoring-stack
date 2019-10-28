@@ -75,7 +75,7 @@ scrape_configs:
       module: [ http_2xx ]
     static_configs:
      - targets:
-        - https://www.noneck.io/
+        - http://www.noneck.io/
     relabel_configs:
      - source_labels: [__address__]
        target_label: __param_target
